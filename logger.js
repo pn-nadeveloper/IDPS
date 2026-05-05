@@ -1,7 +1,6 @@
-const { Tail } = require('tail');
-const mysql = require('mysql');
-
-const regex = /^(\S+) \S+ \S+ \[([\w:\/]+\s[+\-]\d{4})\] "(\S+)\s?(\S+)?\s?(\S+)?" (\d{3}) (\d+|-).+? "(.*?)" "(.*?)"$/;
+import parse from './modules/regex_index.mjs';
+import { Tail } from 'tail';
+import mysql from 'mysql';
 
 // 아파치 로그 파일 경로 (XAMPP 기본 경로 확인)
 const logFilePath = 'C:/xampp/apache/logs/access.log';
@@ -13,21 +12,12 @@ const tail = new Tail(logFilePath, {
 
 tail.on("line", function(data) {
     // 여기서 DB INSERT 로직 실행
-    const match = data.match(regex);
-    if (match) {
-        const ip = match[1];
-        const timestamp = match[2];
-        const method = match[3];
-        const path = match[4];
-        const protocol = match[5];
-        const status = match[6];
-        const size = match[7];
-        const referrer = match[8];
-        const userAgent = match[9];
-        console.log(`IP: ${ip}, Time: ${timestamp}, Method: ${method}, Path: ${path}, Status: ${status}, Size: ${size}, Referrer: ${referrer}, User-Agent: ${userAgent}`);
-    } else {
-        console.log("로그 형식이 예상과 다릅니다:", data);
-    }
+        const parsedData = parse(data);
+        if (parsedData) {
+            console.log(`IP: ${parsedData.ip}, Time: ${parsedData.timestamp}, Method: ${parsedData.method}, Path: ${parsedData.path}, Status: ${parsedData.status}, Size: ${parsedData.size}, Referrer: ${parsedData.referrer}, User-Agent: ${parsedData.userAgent}`);
+        } else {
+            console.log("로그 형식이 예상과 다릅니다:", data);
+        }
 });
 
 tail.on("error", function(error) {
