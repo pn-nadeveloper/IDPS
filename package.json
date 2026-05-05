@@ -2,5 +2,8 @@
   "dependencies": {
     "mysql": "^2.18.1",
     "tail": "^2.2.6"
-  }
+  },
+  "name": "idps",
+  "version": "1.0.0",
+  "type": "module"
 }

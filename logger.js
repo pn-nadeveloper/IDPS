@@ -1,4 +1,5 @@
 import parse from './modules/regex_index.mjs';
+import hashId from './modules/hash_id.mjs';
 import { Tail } from 'tail';
 import mysql from 'mysql';
 
@@ -14,6 +15,7 @@ tail.on("line", function(data) {
     // 여기서 DB INSERT 로직 실행
         const parsedData = parse(data);
         if (parsedData) {
+            hashId(parsedData.ip, parsedData.timestamp, parsedData.method, parsedData.path, parsedData.status);
             console.log(`IP: ${parsedData.ip}, Time: ${parsedData.timestamp}, Method: ${parsedData.method}, Path: ${parsedData.path}, Status: ${parsedData.status}, Size: ${parsedData.size}, Referrer: ${parsedData.referrer}, User-Agent: ${parsedData.userAgent}`);
         } else {
             console.log("로그 형식이 예상과 다릅니다:", data);
