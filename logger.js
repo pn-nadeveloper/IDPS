@@ -12,7 +12,6 @@ const tail = new Tail(logFilePath, {
 });
 
 tail.on("line", function(data) {
-    console.log("새 로그 포착:", data);
     // 여기서 DB INSERT 로직 실행
     const match = data.match(regex);
     if (match) {
