@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@supabase/supabase-js": "^2.105.4",
     "mysql": "^2.18.1",
     "tail": "^2.2.6"
   },
