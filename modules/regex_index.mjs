@@ -1,6 +1,6 @@
 export default function parseLogLine(logLine) {
 
-const regex = /^(\S+) \S+ \S+ \[([\w:\/]+\s[+\-]\d{4})\] "(\S+)\s?(\S+)?\s?(\S+)?" (\d{3}) (\d+|-).+? "(.*?)" "(.*?)"$/;
+const regex = /^([0-9a-fA-F:.]+) \S+ \S+ \[([\w:\/]+\s[+\-]\d{4})\] "(\S+)\s?(\S+)?\s?(\S+)?" (\d{3}) (\d+|-) "(.*?)" "(.*?)"$/;
 
     const match = logLine.match(regex);
     if (match) {
