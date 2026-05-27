@@ -2,3 +2,4 @@
 node_modules/
 log_test.js
 test.bat
+local_cop_model.pkl
