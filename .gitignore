@@ -3,3 +3,6 @@ node_modules/
 log_test.js
 test.bat
 local_cop_model.pkl
+idps_rf_model.pkl
+tfidf_vectorizer.pkl
+test.py
