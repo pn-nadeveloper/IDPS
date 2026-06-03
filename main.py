@@ -2,23 +2,46 @@ import os
 import json
 import joblib
 import requests
-from fastapi import FastAPI
+from fastapi import FastAPI, BackgroundTasks
 from pydantic import BaseModel
 import uvicorn
 from dotenv import load_dotenv
 
 load_dotenv()  # .env 파일에서 환경 변수 로드
+app = FastAPI(title="Hybrid AI-Powered Intrusion Detection System") # FastAPI 앱 생성
+WHITELIST_SET = set() # 화이트 리스트를 글로벌 변수로 선언
+WHITELIST_FILE = "whitelist.txt" # 화이트 리스트 파일 경로
 
-app = FastAPI(title="Hybrid AI-Powered Intrusion Detection System")
+model = None
+vectorizer = None
 
-try:
-    model = joblib.load('idps_rf_model.pkl')
-    vectorizer = joblib.load('tfidf_vectorizer.pkl')
-    print("✅ AI 모델 로드 성공!")
-except Exception as e:
-    print(f"❌ AI 모델 로드 실패: {e}")
+def model_load():
+    global model, vectorizer
+    try:
+        model = joblib.load('idps_rf_model.pkl')
+        vectorizer = joblib.load('tfidf_vectorizer.pkl')
+        print("✅ AI 모델 로드 성공!")
+    except Exception as e:
+        print(f"❌ AI 모델 로드 실패: {e}")
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+
+def load_whitelist():
+    global WHITELIST_SET
+    if os.path.exists(WHITELIST_FILE):
+        with open(WHITELIST_FILE, "r", encoding="utf-8") as f:
+            # 파일에서 줄바꿈을 제거하고, 빈줄이나 주석(#) 제외하고 메모리에 로드
+            lines = [line.strip() for line in f.readlines() if line.strip() and not line.startswith("#")]
+            WHITELIST_SET = set(lines)
+        print(f"✅ 화이트 리스트 로드 완료: {len(WHITELIST_SET)}개 로드됨")
+    else:
+        with open(WHITELIST_FILE, "w" , encoding="utf-8") as f:
+            f.write("# 화이트 리스트에 추가할 URL 경로를 여기에 입력하세요.\n")
+            f.write("# 예시:\n")
+            f.write("/index.html\n")
+            f.write("/js/script.js\n")
+        WHITELIST_SET = {"/index.html", "/js/script.js"} # 기본적으로 몇 개의 정상 URL을 화이트 리스트에 추가
+        print(f"⚠️ 화이트 리스트 파일이 존재하지 않아 새로 생성했습니다: {WHITELIST_FILE}")
 
 def call_second_ai(query_path: str):
     ## 모델 설정 (원하는 모델로 바꿔서)
@@ -64,10 +87,38 @@ def call_second_ai(query_path: str):
         print(f"❌ OpenRouter API 호출 실패: {e}")
         return "NORMAL", "OpenRouter API 호출 실패"
     
+@app.on_event("startup")
+def startup_event():
+    load_whitelist()
+    model_load()
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
+@app.get("/whitelist/reload")
+async def reload_whitelist_endpoint(background_tasks: BackgroundTasks):
+    background_tasks.add_task(load_whitelist)
+    return {"status": "success", "message": "화이트 리스트 재로드 작업이 백그라운드에서 시작되었습니다."}
+
+@app.get("/model/reload")
+async def reload_model_endpoint(background_tasks: BackgroundTasks):
+    background_tasks.add_task(model_load)
+    return {"status": "success", "message": "AI 모델 재로드 작업이 백그라운드에서 시작되었습니다."}
+
+
+
 @app.get("/check")
 async def check_log(path: str):
+    global model, vectorizer, WHITELIST_SET
     if not path:
         return {"status": "error", "message": "URL 경로를 입력해주세요."}
+    if path in WHITELIST_SET:
+        return {
+            "status": "ALLOW",
+            "source": "WHITELIST",
+            "reason": "화이트 리스트에 등록된 URL"
+        }
     try:
 
         vector = vectorizer.transform([path])
@@ -82,7 +133,7 @@ async def check_log(path: str):
                 "proba" : f"{attack_prob*100:.1f}%",
                 "reason" : "명확한 패턴 감지"
             }
-        elif attack_prob >= 0.2:
+        elif attack_prob <= 0.2:
 
             return {
                 "status": "ALLOW",

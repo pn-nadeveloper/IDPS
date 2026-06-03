@@ -1,0 +1,6 @@
+# 화이트 리스트에 추가할 URL 경로를 여기에 입력하세요.
+# 예시:
+/index.html
+/js/script.js
+/get_status.php
+//index.html

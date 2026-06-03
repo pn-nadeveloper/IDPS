@@ -11,3 +11,14 @@
 {"url": "/js/script.js?v=15.0", "verdict": "ATTACK", "reason": "API 내부 에러로 인한 안전 차단"}
 {"url": "/js/script.js?v=15.0", "verdict": "NORMAL", "reason": "정적 파일에 대한 일반적인 버전 파라미터이며, 의심스러운 패턴이 없습니다."}
 {"url": "/js/script.js?v=11241414.0", "verdict": "NORMAL", "reason": "정상적인 자바스크립트 파일(/js/script.js)에 대해 캐시 버스팅 목적의 버전 쿼리 파라미터(v=11241414.0)를 포함한 정상적인 정적 리소스 요청입니다."}
+{"url": "/icon/favicon.ico", "verdict": "NORMAL", "reason": "이것은 표준 웹 사이트의 파비콘(favicon) 파일 요청으로, 웹 브라우저가 웹사이트 탭이나 북마크에 표시될 아이콘을 가져올 때 사용하는 정상적인 요청입니다."}
+{"url": "/cache.json", "verdict": "NORMAL", "reason": "정적인 JSON 캐시 파일에 대한 일반적인 요청 경로입니다."}
+{"url": "/favicon.ico", "verdict": "NORMAL", "reason": "favicon.ico는 브라우저가 사이트 아이콘으로 사용하는 표준 파일로, 공격적 특성이 없음"}
+{"url": "/get_status.php", "verdict": "NORMAL", "reason": "OpenRouter API 호출 실패"}
+{"url": "/get_status.php", "verdict": "NORMAL", "reason": "URL does not indicate a security vulnerability"}
+{"url": "/get_status.php", "verdict": "NORMAL", "reason": "일반적인 상태 조회 요청으로 보이며, 의심스러운 패턴이나 악의적 파라미터가 없습니다."}
+{"url": "/get_status.php", "verdict": "NORMAL", "reason": "OpenRouter API 호출 실패"}
+{"url": "/get_status.php", "verdict": "NORMAL", "reason": "URL is a standard endpoint with no explicit security flags."}
+{"url": "/get_status.php", "verdict": "NORMAL", "reason": "일반적인 상태 확인 스크립트 호출이며, 해킹 패턴과 일치하지 않음"}
+{"url": "/get_status.php", "verdict": "NORMAL", "reason": "정상적인 스크립트 호출 경로입니다."}
+{"url": "get_status.php", "verdict": "NORMAL", "reason": "The URL path is a simple filename without any suspicious characters, directory traversal attempts, or injection payloads."}
