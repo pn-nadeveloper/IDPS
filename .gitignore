@@ -7,3 +7,4 @@ idps_rf_model.pkl
 tfidf_vectorizer.pkl
 test.py
 __pycache__/**/*
+IDPS.code-workspace
