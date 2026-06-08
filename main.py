@@ -6,6 +6,7 @@ from fastapi import FastAPI, BackgroundTasks
 from pydantic import BaseModel
 import uvicorn
 from dotenv import load_dotenv
+from urllib.parse import unquote
 
 load_dotenv()  # .env 파일에서 환경 변수 로드
 app = FastAPI(title="Hybrid AI-Powered Intrusion Detection System") # FastAPI 앱 생성
@@ -77,7 +78,7 @@ def call_second_ai(query_path: str):
 
         if "error" in res_json:
                     print(f"❌ OpenRouter 자체 에러 발생: {res_json['error']}")
-                    return "ATTACK", "API 내부 에러로 인한 안전 차단"
+                    return {"success": False,"reason": "API 내부 에러로 인한 안전 차단"}
 
         ai_text = res_json['choices'][0]['message']['content'].strip()
 
@@ -85,7 +86,7 @@ def call_second_ai(query_path: str):
         return result.get("verdict", "NORMAL"), result.get("reason", "분석 완료")
     except Exception as e:
         print(f"❌ OpenRouter API 호출 실패: {e}")
-        return "NORMAL", "OpenRouter API 호출 실패"
+        return {"success": False,"reason": "OpenRouter API 호출 실패"}
     
 @app.on_event("startup")
 def startup_event():
@@ -113,8 +114,10 @@ async def check_log(path: str):
     global model, vectorizer, WHITELIST_SET
     if not path:
         return {"status": "error", "message": "URL 경로를 입력해주세요."}
-    if path in WHITELIST_SET:
+    temp_path = unquote(path)  # URL 디코딩
+    if temp_path in WHITELIST_SET:
         return {
+            "success": True,
             "status": "ALLOW",
             "source": "WHITELIST",
             "reason": "화이트 리스트에 등록된 URL"
@@ -128,6 +131,7 @@ async def check_log(path: str):
         if attack_prob >= 0.8:
 
             return {
+                "success": True,
                 "status": "BLOCK",
                 "source" : "1st_AI",
                 "proba" : f"{attack_prob*100:.1f}%",
@@ -136,6 +140,7 @@ async def check_log(path: str):
         elif attack_prob <= 0.2:
 
             return {
+                "success": True,
                 "status": "ALLOW",
                 "source": "1st_AI",
                 "proba": f"{attack_prob*100:.1f}%",
@@ -150,18 +155,20 @@ async def check_log(path: str):
 
             if verdict == "ATTACK":
                 return {
+                    "success": True,
                     "status": "BLOCK",
                     "source": "2nd_AI",
                     "reason": reason
                 }
             else:
                 return {
+                    "success": True,
                     "status": "ALLOW",
                     "source": "2nd_AI",
                     "reason": reason
                 }
     except Exception as e:
-        return{"status": "ALLOW", "error": str(e)}
+        return{"success": False, "status": "ALLOW", "error": str(e)}
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

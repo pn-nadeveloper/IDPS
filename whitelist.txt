@@ -4,3 +4,5 @@
 /js/script.js
 /get_status.php
 //index.html
+/img/아야츠노 유니☪️🤍.webp
+/img/강지.webp
