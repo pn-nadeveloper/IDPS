@@ -7,6 +7,7 @@ from pydantic import BaseModel
 import uvicorn
 from dotenv import load_dotenv
 from urllib.parse import unquote
+import time
 
 load_dotenv()  # .env 파일에서 환경 변수 로드
 app = FastAPI(title="Hybrid AI-Powered Intrusion Detection System") # FastAPI 앱 생성
@@ -25,10 +26,22 @@ def model_load():
     except Exception as e:
         print(f"❌ AI 모델 로드 실패: {e}")
 
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+API_KEYS = [ ## 여러 API 키 추가
+    os.getenv("OPENROUTER_API_KEY"),
+    os.getenv("OPENROUTER_API_KEY_2"),
+    os.getenv("OPENROUTER_API_KEY_3"),
+    os.getenv("OPENROUTER_API_KEY_4"),
+]
+
+API_KEYS = [k for k in API_KEYS if k] # 여러 API 키 중 정상적인 키만 넣어주기
+
+current_key_index = 0 # 현재 사용하는 API 키 인덱스
+
+#OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY") #기존 코드
 
 def load_whitelist():
     global WHITELIST_SET
+
     if os.path.exists(WHITELIST_FILE):
         with open(WHITELIST_FILE, "r", encoding="utf-8") as f:
             # 파일에서 줄바꿈을 제거하고, 빈줄이나 주석(#) 제외하고 메모리에 로드
@@ -45,49 +58,69 @@ def load_whitelist():
         print(f"⚠️ 화이트 리스트 파일이 존재하지 않아 새로 생성했습니다: {WHITELIST_FILE}")
 
 def call_second_ai(query_path: str):
+
+    global current_key_index # 현재 사용하는 API 키 인덱스
+
+    if not API_KEYS:
+        print("❌ 설정된 API 키가 없습니다. 설정파일을 확인해주세요.")
+        exit(1)
     ## 모델 설정 (원하는 모델로 바꿔서)
     ##model_name = "gemma-4-31b-it:free"
-    ##model_name = "google/gemma-4-31b-it:free"
+    #model_name = "google/gemma-4-31b-it:free"
     model_name = "openrouter/free"
     url = f"https://openrouter.ai/api/v1/chat/completions"
 
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "Content-Type": "application/json"
-    }
+    Max_total_attempts = len(API_KEYS) * 2
 
-    system_prompt = (
-        "당신은 엄격한 웹 보안 전문가 입니다. 입력된 URL 경로가 해킹시도인지(ATTACK) 정상적인(NORMAL) 판정하세요."
-        "사족이나 대화는 절대 하지 말고 무조건 아래 JSON 형식으로만 답변하세요.\n"
-        "{\"verdict\": \"ATTACK\"} 또는 {\"verdict\": \"NORMAL\", \"reason\": \"이유\"}"
-    )
+    for key in range(Max_total_attempts):
+        active_key = API_KEYS[current_key_index]
+        headers = {
+            "Authorization": f"Bearer {active_key}",
+            "Content-Type": "application/json"
+        }
 
-    payload = {
-        "model": model_name,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"URL: {query_path}"}
-        ],
-        "temperature": 0.1
-    }
+        system_prompt = (
+            "당신은 엄격한 웹 보안 전문가 입니다. 입력된 URL 경로가 해킹시도인지(ATTACK) 정상적인(NORMAL) 판정하세요."
+            "사족이나 대화는 절대 하지 말고 무조건 아래 JSON 형식으로만 답변하세요.\n"
+            "⚠️ 중요: 'reason'의 내용은 반드시 '한국어(Korean)'로만 구체적으로 작성해야 합니다.\n\n"
+            "{\"verdict\": \"ATTACK\", \"reason\": \"이유\"} 또는 {\"verdict\": \"NORMAL\", \"reason\": \"이유\"}"
+        )
 
-    try:
+        payload = {
+            "model": model_name,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"URL: {query_path}"}
+            ],
+            "temperature": 0.1
+        }
 
-        response = requests.post(url, headers=headers, json=payload, timeout=5.0)
-        res_json = response.json()
+        try:
 
-        if "error" in res_json:
-                    print(f"❌ OpenRouter 자체 에러 발생: {res_json['error']}")
-                    return {"success": False,"reason": "API 내부 에러로 인한 안전 차단"}
+            response = requests.post(url, headers=headers, json=payload, timeout=5.0)
+            res_json = response.json()
 
-        ai_text = res_json['choices'][0]['message']['content'].strip()
+            if response.status_code == 429 or "error" in res_json:
+                err_msg = res_json.get("error", {}).get("message", "Unknown Rate Limit")
+                print(f"❌ OpenRouter 자체 에러 발생: {err_msg}")
+                current_key_index = (current_key_index + 1) % len(API_KEYS)
+                time.sleep(0.5)
+                continue
 
-        result = json.loads(ai_text)
-        return result.get("verdict", "NORMAL"), result.get("reason", "분석 완료")
-    except Exception as e:
-        print(f"❌ OpenRouter API 호출 실패: {e}")
-        return {"success": False,"reason": "OpenRouter API 호출 실패"}
-    
+            ai_text = res_json['choices'][0]['message']['content'].strip()
+
+            result = json.loads(ai_text)
+            return result.get("verdict", "NORMAL"), result.get("reason", "reason")
+        except Exception as e:
+            print(f"❌ [키 {current_key_index+1}번] 에러발생 (원인: {e})")
+            print(f"서버를 멈추지 않고, 다음키로 인덱스 하여 다시 시도합니다.")
+
+            current_key_index = (current_key_index + 1) % len(API_KEYS)
+            time.sleep(0.5)
+            continue
+        
+    print(f"❌ OpenRouter API 호출 실패: 제한된 시도 횟수 도달")
+    return {"success": False,"reason": "OpenRouter API 호출 실패"}
 @app.on_event("startup")
 def startup_event():
     load_whitelist()
@@ -110,17 +143,20 @@ async def reload_model_endpoint(background_tasks: BackgroundTasks):
 
 
 @app.get("/check")
-async def check_log(path: str):
+async def check_log(path: str = None, ip: str = None):
     global model, vectorizer, WHITELIST_SET
     if not path:
         return {"status": "error", "message": "URL 경로를 입력해주세요."}
+    if not ip:
+        return {"status": "error", "message": "IP 주소를 입력해주세요."}
     temp_path = unquote(path)  # URL 디코딩
     if temp_path in WHITELIST_SET:
         return {
             "success": True,
             "status": "ALLOW",
             "source": "WHITELIST",
-            "reason": "화이트 리스트에 등록된 URL"
+            "reason": "화이트 리스트에 등록된 URL",
+            "ip": ip
         }
     try:
 
@@ -135,7 +171,8 @@ async def check_log(path: str):
                 "status": "BLOCK",
                 "source" : "1st_AI",
                 "proba" : f"{attack_prob*100:.1f}%",
-                "reason" : "명확한 패턴 감지"
+                "reason" : "명확한 패턴 감지",
+                "ip": ip
             }
         elif attack_prob <= 0.2:
 
@@ -144,6 +181,7 @@ async def check_log(path: str):
                 "status": "ALLOW",
                 "source": "1st_AI",
                 "proba": f"{attack_prob*100:.1f}%",
+                "ip": ip
             }
         else:
 
@@ -158,14 +196,16 @@ async def check_log(path: str):
                     "success": True,
                     "status": "BLOCK",
                     "source": "2nd_AI",
-                    "reason": reason
+                    "reason": reason,
+                    "ip": ip
                 }
             else:
                 return {
                     "success": True,
                     "status": "ALLOW",
                     "source": "2nd_AI",
-                    "reason": reason
+                    "reason": reason,
+                    "ip": ip
                 }
     except Exception as e:
         return{"success": False, "status": "ALLOW", "error": str(e)}

@@ -22,3 +22,38 @@
 {"url": "/get_status.php", "verdict": "NORMAL", "reason": "일반적인 상태 확인 스크립트 호출이며, 해킹 패턴과 일치하지 않음"}
 {"url": "/get_status.php", "verdict": "NORMAL", "reason": "정상적인 스크립트 호출 경로입니다."}
 {"url": "get_status.php", "verdict": "NORMAL", "reason": "The URL path is a simple filename without any suspicious characters, directory traversal attempts, or injection payloads."}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "success", "reason": "reason"}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "success", "reason": "reason"}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "success", "reason": "reason"}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "success", "reason": "reason"}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "success", "reason": "reason"}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "NORMAL", "reason": "OAuth2 또는 인증 프로세스에서 흔히 사용되는 일회성 인증 코드(Authorization Code) 전달 형태입니다."}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "success", "reason": "reason"}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "NORMAL", "reason": "OAuth2 또는 인증 프로세스에서 흔히 사용되는 일회성 인증 코드(Authorization Code) 전달 형식입니다."}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "success", "reason": "reason"}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "NORMAL", "reason": "OAuth2 또는 인증 프로세스에서 흔히 사용되는 일회성 인증 코드(Authorization Code) 전달 형태입니다."}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "NORMAL", "reason": "OAuth2 또는 인증 프로세스에서 흔히 사용되는 일회성 인증 코드(Authorization Code) 전달 형식입니다."}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "NORMAL", "reason": "OAuth2 또는 인증 프로세스에서 흔히 사용되는 일회성 인증 코드(Authorization Code) 전달 형태입니다."}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "success", "reason": "reason"}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "NORMAL", "reason": "입력된 URL 경로는 특수문자나 경로 탐색, 명령어 삽입 등의 공격 패턴이 없으며 단순한 쿼리 파라미터이므로 정상적입니다."}
+{"url": "/hello.world?allow_url_include=1", "verdict": "ATTACK", "reason": "분석 완료"}
+{"url": "/hello.world?allow_url_include=1", "verdict": "success", "reason": "reason"}
+{"url": "/hello.world?allow_url_include=1", "verdict": "ATTACK", "reason": "The query parameter allow_url_include=1 attempts to enable remote file inclusion, a known attack vector."}
+{"url": "/hello.world?allow_url_include=1", "verdict": "success", "reason": "reason"}
+{"url": "/hello.world?allow_url_include=1", "verdict": "success", "reason": "reason"}
+{"url": "/hello.world?allow_url_include=1", "verdict": "ATTACK", "reason": "The query parameter 'allow_url_include=1' attempts to manipulate PHP's allow_url_include setting, which is a known technique for remote file inclusion attacks."}
+{"url": "/hello.world?allow_url_include=1", "verdict": "ATTACK", "reason": "allow_url_include=1 파라미터는 PHP의 허용되지 않아야 할 원격 파일 포함 기능을 의도적으로 활성화하려는 공격 시도로, 서버 측에서 이 설정이 비활성화되어 있는지 확인하거나, 입력값을 검증하지 않고 사용할 경우 원격 파일 포함 취약점(RFI)에 취약해집니다."}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "NORMAL", "reason": "해당 URL은 쿼리 스트링을 통해 암호화된 것으로 보이는 인증 코드 또는 토큰 값을 전달하고 있으며, SQL Injection, XSS, Path Traversal 등 일반적인 웹 공격 패턴이 발견되지 않습니다."}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "NORMAL", "reason": "특수문자나 경로 탐색 시도가 없으며, 무작위 토큰으로 보이며 정상적인 쿼리 파라미터로 판단됩니다."}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "NORMAL", "reason": "URL 경로에 'code'라는 일반적인 쿼리 파라미터가 포함되어 있으나, 특별한 악성 패턴이나 공격 시도가 명확하지 않습니다. 길이가 긴 문자열은 세션 토큰, 인증 코드, 또는 OAuth 콜백 등 정상적인 용도로 사용될 수 있습니다."}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "success", "reason": "reason"}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "NORMAL", "reason": "URL에 일반적인 쿼리 파라미터 code만 포함되어 있으며, SQL 인젝션, XSS, 경로 탐색, 명령 실행 등 악성 패턴이나 의심스러운 페이로드는 확인되지 않습니다."}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "success", "reason": "reason"}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "success", "reason": "reason"}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "NORMAL", "reason": "단순한 쿼리 파라미터 코드 값으로, SQL 인젝션, XSS, 경로 순회, 명령 실행 등 일반적인 웹 공격 패턴이 확인되지 않습니다."}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "success", "reason": "reason"}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "NORMAL", "reason": "해당 URL은 일반적인 쿼리 파라미터로 보이며, 악성 코드나 공격 패턴이 감지되지 않습니다."}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "ATTACK", "reason": "의심스러운 랜덤 문자열로 구성된 'code' 파라미터가 있으며, 이는 악성 코드 주입이나 보안 필터 우회 시도로 보입니다. 일반적인 웹 애플리케이션에서는 이러한 형태의 URL이 정상적이지 않습니다."}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "success", "reason": "reason"}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "NORMAL", "reason": "URL 경로는 루트 경로('/')에 'code'라는 쿼리 파라미터를 포함하고 있으나, 파라미터 값은 알파벳과 숫자로 구성된 24자리 문자열로 보이며, 특별한 악성 패턴이나 공격 시도와 관련된 특징이 없습니다. OAuth 인증 콜백이나 세션 토큰 등 정상적인 서비스 흐름에서 흔히 사용되는 형태로 판단됩니다."}
+{"url": "/?code=KYI5xuJshQDOy7bMU7GnIA66v7Q", "verdict": "NORMAL", "reason": "특수한 공격 패턴이나 악성 스크립트, SQL 인젝션, 디렉터리 트래버설 등이 없으며, 단순히 무작위 문자열을 포함한 'code' 파라미터만 전달된 일반적인 GET 요청이므로 정상(NORMAL)으로 판단됩니다."}
