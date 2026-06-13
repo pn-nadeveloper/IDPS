@@ -9,14 +9,36 @@ import null_data from './modules/null_data.mjs';
 import agent_null from './modules/agent_null.mjs';
 import { Tail } from 'tail';
 import mysql from 'mysql';
+import fetch from 'node-fetch';
 
-async function insertLogToSupabase(logData) {
+
+async function insertLogToSupabase(logData, path) {
     const { data, error } = await supabase
         .from('log')
         .insert([logData]);
 
     if (error) console.error('❌ 전송 에러:', error.message);
     else console.log('✅ Supabase에 로그를 추가했습니다!');
+    AI(path, logData.client_ip, logData.log_id);
+};
+
+async function AI(path, ip, id) {
+    try{
+    const AI = await fetch(`http://127.0.0.1:8000/check?path=${path}&ip=${ip}&id=${id}`, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                });
+                const AI_JSON = await AI.json();
+                if (AI_JSON.success) {
+                    console.log("AI 정보:", AI_JSON);
+                } else {
+                    console.log("AI 에러:", AI_JSON);
+                }
+} catch (error) {
+    console.log("AI 에러:", error);
+}
 };
 
 // 아파치 로그 파일 경로 (XAMPP 기본 경로 확인)
@@ -60,8 +82,9 @@ services.forEach(service => {
                     // -> 추후 x-forwarded-for 헤더로 IP를 전달하는 경우 source 판단 로직 추가 필요
                     source: service.name
                     };
-                Promise.all([insertLogToSupabase(logData)]);
-                console.log(`IP: ${parsedData.ip}, Time: ${parsedData.timestamp}, Method: ${parsedData.method}, Path: ${parsedData.path}, Status: ${parsedData.status}, Size: ${parsedData.size}, Referrer: ${parsedData.referrer}, User-Agent: ${parsedData.userAgent}, Hash ID: ${hash}`);
+                //Promise.all([insertLogToSupabase(logData)]);
+                //console.log(`IP: ${parsedData.ip}, Time: ${parsedData.timestamp}, Method: ${parsedData.method}, Path: ${parsedData.path}, Status: ${parsedData.status}, Size: ${parsedData.size}, Referrer: ${parsedData.referrer}, User-Agent: ${parsedData.userAgent}, Hash ID: ${hash}`);
+                insertLogToSupabase(logData,parsedData.path);
             } else {
                 console.log("로그 형식이 예상과 다릅니다:", data);
             }

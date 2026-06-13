@@ -143,7 +143,7 @@ async def reload_model_endpoint(background_tasks: BackgroundTasks):
 
 
 @app.get("/check")
-async def check_log(path: str = None, ip: str = None):
+async def check_log(path: str = None, ip: str = None, id: str = None):
     global model, vectorizer, WHITELIST_SET
     if not path:
         return {"status": "error", "message": "URL 경로를 입력해주세요."}
@@ -156,8 +156,19 @@ async def check_log(path: str = None, ip: str = None):
             "status": "ALLOW",
             "source": "WHITELIST",
             "reason": "화이트 리스트에 등록된 URL",
-            "ip": ip
+            "ip": ip,
+            "id": id
         }
+    for white_path in WHITELIST_SET:
+        if temp_path.startswith(white_path):
+            return {
+                "success": True,
+                "status": "ALLOW",
+                "source": "WHITELIST",
+                "reason": "화이트 리스트에 등록된 URL",
+                "ip": ip,
+                "id": id
+            }
     try:
 
         vector = vectorizer.transform([path])
@@ -172,7 +183,8 @@ async def check_log(path: str = None, ip: str = None):
                 "source" : "1st_AI",
                 "proba" : f"{attack_prob*100:.1f}%",
                 "reason" : "명확한 패턴 감지",
-                "ip": ip
+                "ip": ip,
+                "id": id
             }
         elif attack_prob <= 0.2:
 
@@ -181,7 +193,8 @@ async def check_log(path: str = None, ip: str = None):
                 "status": "ALLOW",
                 "source": "1st_AI",
                 "proba": f"{attack_prob*100:.1f}%",
-                "ip": ip
+                "ip": ip,
+                "id": id
             }
         else:
 
@@ -197,7 +210,8 @@ async def check_log(path: str = None, ip: str = None):
                     "status": "BLOCK",
                     "source": "2nd_AI",
                     "reason": reason,
-                    "ip": ip
+                    "ip": ip,
+                    "id": id
                 }
             else:
                 return {
@@ -205,7 +219,8 @@ async def check_log(path: str = None, ip: str = None):
                     "status": "ALLOW",
                     "source": "2nd_AI",
                     "reason": reason,
-                    "ip": ip
+                    "ip": ip,
+                    "id": id
                 }
     except Exception as e:
         return{"success": False, "status": "ALLOW", "error": str(e)}

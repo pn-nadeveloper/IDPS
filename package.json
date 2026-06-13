@@ -3,6 +3,7 @@
     "@supabase/supabase-js": "^2.105.4",
     "dotenv": "^17.4.2",
     "mysql": "^2.18.1",
+    "node-fetch": "^3.3.2",
     "tail": "^2.2.6"
   },
   "name": "idps",
