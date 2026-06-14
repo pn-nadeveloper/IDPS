@@ -37,8 +37,6 @@ API_KEYS = [k for k in API_KEYS if k] # 여러 API 키 중 정상적인 키만 �
 
 current_key_index = 0 # 현재 사용하는 API 키 인덱스
 
-#OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY") #기존 코드
-
 def load_whitelist():
     global WHITELIST_SET
 
