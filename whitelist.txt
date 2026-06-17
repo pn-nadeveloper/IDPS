@@ -26,3 +26,5 @@
 /img/유즈하 리코.webp
 /img/유즈하 리코⚔️🍀.webp
 /?code=
+/dist/app.
+/dist/script.

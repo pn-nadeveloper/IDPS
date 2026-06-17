@@ -36,7 +36,7 @@ def test1_cloudflare_api():
         "Authorization": f"Bearer {CLOUDFLARE_API_TOKEN}",
     }
     try:
-        response = requests.get(url, headers=headers, timeout=5.0)  # POST 요청으로 리스트 항목 추가 테스트
+        response = requests.get(url, headers=headers, timeout=5.0)  # GET 요청으로 리스트 항목 조회 테스트
         if response.status_code == 200:
             print("✅ Cloudflare API 연결 성공!")
             data = response.json()

@@ -22,6 +22,34 @@ async function insertLogToSupabase(logData, path) {
     AI(path, logData.client_ip, logData.log_id);
 };
 
+async function updateLogToSupabase(Data, id) {
+    const { data, error } = await supabase
+        .from('log')
+        .update({"proba" : Data.proba, "reason" : Data.reason , "verdict" : Data.status, "AI_source" : Data.source})
+        .eq('log_id', id);
+    if (error) console.error('❌ 전송 에러:', error.message);
+    else console.log('✅ Supabase에 로그를 업데이트했습니다!');
+}
+
+async function block_ip(ip, reason) {
+    try{
+        const block = await fetch(`http://127.0.0.1:8000/block?ip=${ip}&reason=${reason}`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                });
+                const block_JSON = await block.json();
+                if (block_JSON.status == "success") {
+                    console.log("차단 성공!", block_JSON);
+                } else {
+                    console.log("차단 실패!", block_JSON);
+                }
+    } catch (error) {
+        console.log("차단 실패!", error);
+    }
+}
+
 async function AI(path, ip, id) {
     try{
     const AI = await fetch(`http://127.0.0.1:8000/check?path=${path}&ip=${ip}&id=${id}`, {
@@ -33,6 +61,7 @@ async function AI(path, ip, id) {
                 const AI_JSON = await AI.json();
                 if (AI_JSON.success) {
                     console.log("AI 정보:", AI_JSON);
+                    updateLogToSupabase(AI_JSON, id);
                 } else {
                     console.log("AI 에러:", AI_JSON);
                 }
@@ -45,7 +74,8 @@ async function AI(path, ip, id) {
 const services = [ { name: 'stellog', path: 'C:/xampp/apache/logs/access.log' },
                   { name: 'stelview', path: 'C:/xampp/apache/logs/stelview-access.log' },
                   { name: 'naver-sso', path: 'C:/xampp/apache/logs/naver-sso-access.log' },
-                  { name: 'fanding', path: 'C:/xampp/apache/logs/fanding-access.log' },
+                  //{ name: 'fanding', path: 'C:/xampp/apache/logs/fanding-access.log' },
+                  // Example: {name: 'example', path: 'C:/xampp/apache/logs/example.log'},
                 ];
 
 services.forEach(service => {
