@@ -19,21 +19,26 @@ async function insertLogToSupabase(logData, path) {
 
     if (error) console.error('❌ 전송 에러:', error.message);
     else console.log('✅ Supabase에 로그를 추가했습니다!');
-    AI(path, logData.client_ip, logData.log_id);
+    AI(path, logData.client_ip, logData.log_id, logData);
 };
 
-async function updateLogToSupabase(Data, id) {
+async function updateLogToSupabase(Data, id, logData) {
     const { data, error } = await supabase
         .from('log')
         .update({"proba" : Data.proba, "reason" : Data.reason , "verdict" : Data.status, "AI_source" : Data.source})
         .eq('log_id', id);
     if (error) console.error('❌ 전송 에러:', error.message);
-    else console.log('✅ Supabase에 로그를 업데이트했습니다!');
+    else {
+        console.log('✅ Supabase에 로그를 업데이트했습니다!');
+        if (Data.status == "BLOCK" || Data.AI_source == "1st_AI") {
+            block_ip(logData.client_ip, Data.reason);
+        }
+    }
 }
 
 async function block_ip(ip, reason) {
     try{
-        const block = await fetch(`http://127.0.0.1:8000/block?ip=${ip}&reason=${reason}`, {
+        const block = await fetch(`http://127.0.0.1:8000/blocked?ip=${ip}&reason=${reason}`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -50,7 +55,7 @@ async function block_ip(ip, reason) {
     }
 }
 
-async function AI(path, ip, id) {
+async function AI(path, ip, id, logData) {
     try{
     const AI = await fetch(`http://127.0.0.1:8000/check?path=${path}&ip=${ip}&id=${id}`, {
                     method: "GET",
@@ -61,7 +66,7 @@ async function AI(path, ip, id) {
                 const AI_JSON = await AI.json();
                 if (AI_JSON.success) {
                     console.log("AI 정보:", AI_JSON);
-                    updateLogToSupabase(AI_JSON, id);
+                    updateLogToSupabase(AI_JSON, id, logData);
                 } else {
                     console.log("AI 에러:", AI_JSON);
                 }

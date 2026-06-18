@@ -372,13 +372,14 @@ async def blocked_ip(ip : str = None, reason : str = None):
     try:
         response = requests.post(url, headers=headers, json=body, timeout=5.0)  # POST 요청으로 리스트 항목 추가 테스트
         if response.status_code == 200:
-            print("✅ Cloudflare 차단 성공!")
             result = response.json()
             return {"status": "success", "message": result['result']['operation_id']}
         else:
             print(f"❌ Cloudflare 차단 API 연결 실패: {response.status_code} - {response.text}")
+            return {"status": "error", "message": "차단 실패"}
     except Exception as e:
         print(f"❌ Cloudflare 차단 API 호출 중 예외 발생: {e}")
+        return {"status": "error", "message": "차단 실패"}
 
 @app.get("/unblocked")
 async def unblocked_ip(id : str = None):
