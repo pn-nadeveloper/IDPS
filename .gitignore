@@ -11,3 +11,4 @@ IDPS.code-workspace
 AI.py
 AI_train.py
 .continue
+logger.log

@@ -10,7 +10,29 @@ import agent_null from './modules/agent_null.mjs';
 import { Tail } from 'tail';
 import mysql from 'mysql';
 import fetch from 'node-fetch';
+import express from "express";
+import cors from "cors";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from 'url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const app = express();
+const logFile = fs.createWriteStream(__dirname + '/logger.log', { flags: 'a' });
+const originalLog = console.log;
 
+console.log = function (...args) {
+    const time = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul'});
+    const message = args.map(arg =>
+        typeof arg === 'string' ? arg : JSON.stringify(arg)
+    ).join(' ');
+
+    const logEntry = `${time} ${message}\n`;
+    logFile.write(logEntry);
+    originalLog.apply(console, [logEntry]);
+}
+app.use(express.json());
+app.use(express.static(__dirname + 'public'));
+app.use(cors());
 
 async function insertLogToSupabase(logData, path) {
     const { data, error } = await supabase
@@ -25,18 +47,144 @@ async function insertLogToSupabase(logData, path) {
 async function updateLogToSupabase(Data, id, logData) {
     const { data, error } = await supabase
         .from('log')
-        .update({"proba" : Data.proba, "reason" : Data.reason , "verdict" : Data.status, "AI_source" : Data.source})
+        .update({"proba" : Data.proba, "reason" : Data.reason , "verdict" : Data.status, "ai_source" : Data.source})
         .eq('log_id', id);
     if (error) console.error('❌ 전송 에러:', error.message);
     else {
         console.log('✅ Supabase에 로그를 업데이트했습니다!');
-        if (Data.status == "BLOCK" || Data.AI_source == "1st_AI") {
-            block_ip(logData.client_ip, Data.reason);
+        if (Data.status == "BLOCK" && Data.source == "1st_AI") {
+            block_ip(logData.client_ip, Data.reason,id);
+        }
+        else if (Data.status == "BLOCK" && Data.source == "2nd_AI") {
+            warning_ip(id);
         }
     }
 }
 
-async function block_ip(ip, reason) {
+async function warning_ip(log_id) {
+    const { data: logData, error } = await supabase
+        .from('log')
+        .select('*')
+        .eq('log_id', log_id);
+    if (error) console.error('❌ 조회 에러:', error.message);
+    else {
+        const { data, error } = await supabase
+        .from('warning')
+        .insert(
+            {
+                log_id: logData[0].log_id,
+                timestamp: logData[0].timestamp,
+                client_ip: logData[0].client_ip,
+                method: logData[0].method,
+                path: logData[0].path,
+                query_parms : logData[0].query_parms,
+                status_code: logData[0].status_code,
+                http_size: logData[0].http_size,
+                referer: logData[0].referer,
+                user_agent: logData[0].user_agent,
+                source: logData[0].source,
+                check_status: logData[0].check_status,
+                proba : logData[0].proba,
+                reason : logData[0].reason,
+                verdict : logData[0].verdict,
+                ai_source : logData[0].ai_source,
+                check_status : logData[0].check_status
+            }
+        )
+        if (error) console.error('❌ WARNING 테이블 에러:', error.message);
+        else console.log('✅ WARNING 테이블에 로그를 추가했습니다!');
+    }
+}
+
+async function updateLogToBlockCloudflare(id,log_id) {
+    const { data: logData, error } = await supabase
+        .from('log')
+        .select('*')
+        .eq('log_id', log_id);
+    if (error) console.error('❌ 조회 에러:', error.message);
+    else {
+        const { data, error } = await supabase
+        .from('block')
+        .insert(
+            {
+                log_id: logData[0].log_id,
+                timestamp: logData[0].timestamp,
+                client_ip: logData[0].client_ip,
+                method: logData[0].method,
+                path: logData[0].path,
+                query_parms : logData[0].query_parms,
+                status_code: logData[0].status_code,
+                http_size: logData[0].http_size,
+                referer: logData[0].referer,
+                user_agent: logData[0].user_agent,
+                source: logData[0].source,
+                check_status: logData[0].check_status,
+                proba : logData[0].proba,
+                reason : logData[0].reason,
+                verdict : logData[0].verdict,
+                ai_source : logData[0].ai_source,
+                check_status : "True",
+                cloudflare_id: id
+            }
+        ) 
+        if (error) console.error('❌ BLOCK 테이블 에러:', error.message);
+        else {
+            console.log('✅ BLOCK 테이블에 로그를 추가했습니다!');
+            const { data, error } = await supabase
+            .from('warning')
+            .update({"cloudflare_id": id, "check_status": "True"})
+            .eq('log_id', log_id);
+            if (error) console.error('❌ WARNING 테이블 에러:', error.message);
+            else console.log('✅ WARNING 테이블에 로그를 업데이트했습니다!');
+        }
+    }
+}
+
+async function updateLogToCloudflare(id,log_id) {
+    const { data: logData, error } = await supabase
+        .from('log')
+        .select('*')
+        .eq('log_id', log_id);
+    if (error) console.error('❌ 조회 에러:', error.message);
+    else {
+        const { data, error } = await supabase
+        .from('block')
+        .insert(
+            {
+                log_id: logData[0].log_id,
+                timestamp: logData[0].timestamp,
+                client_ip: logData[0].client_ip,
+                method: logData[0].method,
+                path: logData[0].path,
+                query_parms : logData[0].query_parms,
+                status_code: logData[0].status_code,
+                http_size: logData[0].http_size,
+                referer: logData[0].referer,
+                user_agent: logData[0].user_agent,
+                source: logData[0].source,
+                check_status: logData[0].check_status,
+                proba : logData[0].proba,
+                reason : logData[0].reason,
+                verdict : logData[0].verdict,
+                ai_source : logData[0].ai_source,
+                check_status : logData[0].check_status,
+                cloudflare_id: id
+            }
+        ) 
+        if (error) console.error('❌ BLOCK 테이블 에러:', error.message);
+        else {
+            console.log('✅ BLOCK 테이블에 로그를 추가했습니다!');
+            const { data, error } = await supabase
+            .from('log')
+            .update({"cloudflare_id": id})
+            .eq('log_id', log_id);
+            if (error) console.error('❌ Log 테이블 에러:', error.message);
+            else console.log('✅ Log 테이블에 로그를 업데이트했습니다!');
+        }
+    }
+}
+
+async function block_ip(ip, reason,log_id) {
     try{
         const block = await fetch(`http://127.0.0.1:8000/blocked?ip=${ip}&reason=${reason}`, {
                     method: "POST",
@@ -46,7 +194,10 @@ async function block_ip(ip, reason) {
                 });
                 const block_JSON = await block.json();
                 if (block_JSON.status == "success") {
-                    console.log("차단 성공!", block_JSON);
+                    //console.log("차단 성공!", block_JSON);
+                    const id = block_JSON.message;
+                    //console.log(log_id);
+                    updateLogToCloudflare(id,log_id);
                 } else {
                     console.log("차단 실패!", block_JSON);
                 }
@@ -65,7 +216,7 @@ async function AI(path, ip, id, logData) {
                 });
                 const AI_JSON = await AI.json();
                 if (AI_JSON.success) {
-                    console.log("AI 정보:", AI_JSON);
+                    //console.log("AI 정보:", AI_JSON);
                     updateLogToSupabase(AI_JSON, id, logData);
                 } else {
                     console.log("AI 에러:", AI_JSON);
@@ -74,6 +225,56 @@ async function AI(path, ip, id, logData) {
     console.log("AI 에러:", error);
 }
 };
+
+app.post('/blocked', async (req, res) => {
+    const ip = req.query.ip;
+    const reason = req.query.reason;
+    const logId = req.query.log_id;
+    try {
+        const result = await fetch(`http://127.0.0.1:8000/blocked?ip=${ip}&reason=${reason}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+        const result_JSON = await result.json();
+        if (result_JSON.status == "success") {
+            //console.log("차단 성공!", result_JSON);
+            const id = result_JSON.message;
+            updateLogToBlockCloudflare(id,logId);
+            res.status(200).json({ status: 'success', message: '차단 성공' });
+            //console.log("차단 성공!", result_JSON);
+            //console.log(logId);
+        } else {
+            console.log("차단 실패!", result_JSON);
+        }
+    } catch (error) {
+        console.log('❌ BLOCK 테스트 에러:', error);
+        res.status(500).json({ status: 'error', message: '차단 실패' });
+    }
+});
+
+app.delete('/unblocked', async (req, res) => {
+    const id = req.query.id;
+    try {
+        const result = await fetch(`http://127.0.0.1:8000/unblocked?id=${id}`, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+        const result_JSON = await result.json();
+        if (result_JSON.status == "success") {
+            console.log("차단 해제 성공!", result_JSON);
+            res.status(200).json({ status: 'success', message: '차단 해제 성공' });
+        } else {
+            console.log("차단 해제 실패!", result_JSON);
+        }
+    } catch (error) {
+        console.log('❌ UNBLOCK 에러:', error);
+        res.status(500).json({ status: 'error', message: '차단 해제 실패' });
+    }
+});
 
 // 아파치 로그 파일 경로 (XAMPP 기본 경로 확인)
 const services = [ { name: 'stellog', path: 'C:/xampp/apache/logs/access.log' },
@@ -115,7 +316,8 @@ services.forEach(service => {
                     // source는 referrer를 기반으로 판단 허나 cloudflare의 경우 x-forwarded-for 헤더로 IP를 전달하기 때문에 
                     // source 판단이 어려움. 일단 referrer 기반으로 판단하되, referrer가 없는 경우는 'unknown'으로 처리 
                     // -> 추후 x-forwarded-for 헤더로 IP를 전달하는 경우 source 판단 로직 추가 필요
-                    source: service.name
+                    source: service.name,
+                    check_status: false
                     };
                 //Promise.all([insertLogToSupabase(logData)]);
                 //console.log(`IP: ${parsedData.ip}, Time: ${parsedData.timestamp}, Method: ${parsedData.method}, Path: ${parsedData.path}, Status: ${parsedData.status}, Size: ${parsedData.size}, Referrer: ${parsedData.referrer}, User-Agent: ${parsedData.userAgent}, Hash ID: ${hash}`);
@@ -129,4 +331,4 @@ services.forEach(service => {
         console.log('에러 발생:', error);
     });
 });
-console.log("실시간 로그 감시 시작...");
+app.listen(9999, () => console.log('실시간 로그 감시 시작...'));

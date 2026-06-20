@@ -8,8 +8,16 @@ import uvicorn
 from dotenv import load_dotenv
 from urllib.parse import unquote
 import time
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Hybrid AI-Powered Intrusion Detection System") # FastAPI 앱 생성
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3333"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 WHITELIST_SET = set() # 화이트 리스트를 글로벌 변수로 선언
 WHITELIST_FILE = "whitelist.txt" # 화이트 리스트 파일 경로
 Gemini_API_KEY = "" # Gemini API 키 초기값
@@ -145,6 +153,7 @@ def call_second_ai_Rotation(query_path: str):
             ai_text = res_json['choices'][0]['message']['content'].strip()
 
             result = json.loads(ai_text)
+            print(result)
             return result.get("verdict", "NORMAL"), result.get("reason", "reason")
         except Exception as e:
             print(f"❌ [키 {current_key_index+1}번] 에러발생 (원인: {e})")
@@ -372,8 +381,19 @@ async def blocked_ip(ip : str = None, reason : str = None):
     try:
         response = requests.post(url, headers=headers, json=body, timeout=5.0)  # POST 요청으로 리스트 항목 추가 테스트
         if response.status_code == 200:
-            result = response.json()
-            return {"status": "success", "message": result['result']['operation_id']}
+            url = f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/rules/lists/{list_id}/items?search={ip}"
+            headers = {
+                "Authorization": f"Bearer {CLOUDFLARE_API_TOKEN}",
+            }
+            try:
+                response = requests.get(url, headers=headers, timeout=5.0)  # DELETE 요청으로 리스트 항목 삭제 테스트
+                if response.status_code == 200:
+                    data = response.json()
+                    return {"status": "success", "message": data['result'][0]['id']}
+                else:
+                    print(f"❌ Cloudflare API GET 연결 실패: {response.status_code} - {response.text}")
+            except Exception as e:
+                print(f"❌ Cloudflare API GET 호출 중 예외 발생: {e}")
         else:
             print(f"❌ Cloudflare 차단 API 연결 실패: {response.status_code} - {response.text}")
             return {"status": "error", "message": "차단 실패"}
@@ -381,7 +401,7 @@ async def blocked_ip(ip : str = None, reason : str = None):
         print(f"❌ Cloudflare 차단 API 호출 중 예외 발생: {e}")
         return {"status": "error", "message": "차단 실패"}
 
-@app.get("/unblocked")
+@app.delete("/unblocked")
 async def unblocked_ip(id : str = None):
     if not id:
         return {"status": "error", "message": "ID 를 입력해주세요."}

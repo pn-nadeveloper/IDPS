@@ -24,7 +24,7 @@ def test_cloudflare_api():
         if response.status_code == 200:
             print("✅ Cloudflare API 연결 성공!")
             data = response.json()
-            print(json.dumps(data, indent=4))  # 응답 데이터 출력
+            print(data)  # 응답 데이터 출력
         else:
             print(f"❌ Cloudflare API 연결 실패: {response.status_code} - {response.text}")
     except Exception as e:
@@ -53,7 +53,7 @@ def test2_cloudflare_api():
     }
     body = {
         "items": [{
-            "id" : "6b684593679d430381274ef159495dd3"
+            "id" : "6fec73b9be92424d93f309e413b343a0"
         }]
     }
     try:
@@ -67,8 +67,26 @@ def test2_cloudflare_api():
     except Exception as e:
         print(f"❌ Cloudflare API 호출 중 예외 발생: {e}")
 
+def test3_cloudflare_api():
+    ip = "10.0.0.1"
+    url = f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/rules/lists/{list_id}/items?search={ip}" #Cloudflare List 항목 업데이트 테스트 API 엔드포인트
+    headers = {
+        "Authorization": f"Bearer {CLOUDFLARE_API_TOKEN}",
+    }
+    try:
+        response = requests.get(url, headers=headers, timeout=5.0)  # DELETE 요청으로 리스트 항목 삭제 테스트
+        if response.status_code == 200:
+            print("✅ Cloudflare API 연결 성공!")
+            data = response.json()
+            print(json.dumps(data, indent=4))  # 응답 데이터 출력
+        else:
+            print(f"❌ Cloudflare API 연결 실패: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"❌ Cloudflare API 호출 중 예외 발생: {e}")
+
 
 if __name__ == "__main__":
     #test_cloudflare_api()
-    test1_cloudflare_api()
+    #test1_cloudflare_api()
     #test2_cloudflare_api()
+    test3_cloudflare_api()

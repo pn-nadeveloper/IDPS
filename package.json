@@ -1,9 +1,13 @@
 {
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "fs": "^0.0.1-security",
     "mysql": "^2.18.1",
     "node-fetch": "^3.3.2",
+    "path": "^0.12.7",
     "tail": "^2.2.6"
   },
   "name": "idps",
