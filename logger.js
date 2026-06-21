@@ -118,7 +118,6 @@ async function updateLogToBlockCloudflare(id,log_id) {
                 referer: logData[0].referer,
                 user_agent: logData[0].user_agent,
                 source: logData[0].source,
-                check_status: logData[0].check_status,
                 proba : logData[0].proba,
                 reason : logData[0].reason,
                 verdict : logData[0].verdict,
@@ -135,10 +134,61 @@ async function updateLogToBlockCloudflare(id,log_id) {
             .update({"cloudflare_id": id, "check_status": "True"})
             .eq('log_id', log_id);
             if (error) console.error('❌ WARNING 테이블 에러:', error.message);
-            else console.log('✅ WARNING 테이블에 로그를 업데이트했습니다!');
+            else {console.log('✅ WARNING 테이블에 로그를 업데이트했습니다!');
+                const { data, error } = await supabase
+                .from('log')
+                .update({"cloudflare_id": id , "check_status": "True"})
+                .eq('log_id', log_id);
+                if (error) console.error('❌ Log 테이블 에러:', error.message);
+                else console.log('✅ Log 테이블에 로그를 업데이트했습니다!');
+            }
         }
     }
 }
+
+async function updateLogToAllowBlockCloudflare(id,log_id) {
+    const { data: logData, error } = await supabase
+        .from('log')
+        .select('*')
+        .eq('log_id', log_id);
+    if (error) console.error('❌ 조회 에러:', error.message);
+    else {
+        const { data, error } = await supabase
+        .from('block')
+        .insert(
+            {
+                log_id: logData[0].log_id,
+                timestamp: logData[0].timestamp,
+                client_ip: logData[0].client_ip,
+                method: logData[0].method,
+                path: logData[0].path,
+                query_parms : logData[0].query_parms,
+                status_code: logData[0].status_code,
+                http_size: logData[0].http_size,
+                referer: logData[0].referer,
+                user_agent: logData[0].user_agent,
+                source: logData[0].source,
+                proba : logData[0].proba,
+                reason : logData[0].reason,
+                verdict : "BLOCK",
+                ai_source : logData[0].ai_source,
+                check_status : "True",
+                cloudflare_id: id
+            }
+        ) 
+        if (error) console.error('❌ BLOCK 테이블 에러:', error.message);
+        else {
+            console.log('✅ BLOCK 테이블에 로그를 추가했습니다!');
+            const { data, error } = await supabase
+            .from('log')
+            .update({"cloudflare_id": id, "check_status": "True", "verdict": "BLOCK"})
+            .eq('log_id', log_id);
+            if (error) console.error('❌ Log 테이블 에러:', error.message);
+            else console.log('✅ Log 테이블에 로그를 업데이트했습니다!');
+        }
+    }
+}
+
 
 async function updateLogToCloudflare(id,log_id) {
     const { data: logData, error } = await supabase
@@ -162,12 +212,11 @@ async function updateLogToCloudflare(id,log_id) {
                 referer: logData[0].referer,
                 user_agent: logData[0].user_agent,
                 source: logData[0].source,
-                check_status: logData[0].check_status,
+                check_status: "True",
                 proba : logData[0].proba,
                 reason : logData[0].reason,
-                verdict : logData[0].verdict,
+                verdict : "BLOCK",
                 ai_source : logData[0].ai_source,
-                check_status : logData[0].check_status,
                 cloudflare_id: id
             }
         ) 
@@ -181,6 +230,55 @@ async function updateLogToCloudflare(id,log_id) {
             if (error) console.error('❌ Log 테이블 에러:', error.message);
             else console.log('✅ Log 테이블에 로그를 업데이트했습니다!');
         }
+    }
+}
+
+async function updateLogToUnblockCloudflare(log_id) {
+    const { data, error } = await supabase
+    .from('log')
+    .update({"verdict": "ALLOW"})
+    .eq('log_id', log_id);
+    if (error) console.error('❌ Log 테이블 업데이트 에러:', error.message);
+    else{ 
+        console.log('✅ Log 테이블에 로그를 업데이트했습니다!');
+        const { data, error } = await supabase
+        .from('block')
+        .delete()
+        .eq('log_id', log_id);
+        if (error) console.error('❌ BLOCK 테이블 삭제 에러:', error.message);
+        else console.log('✅ BLOCK 테이블에 로그를 삭제했습니다!');
+    }
+}
+
+async function updateLogToPermit(log_id) {
+    const { data, error } = await supabase
+    .from('log')
+    .update({"verdict": "ALLOW"})
+    .eq('log_id', log_id);
+    if (error) console.error('❌ Log 테이블 업데이트 에러:', error.message);
+    else{ 
+        console.log('✅ Log 테이블에 로그를 업데이트했습니다!');
+        const { data, error } = await supabase
+        .from('warning')
+        .delete()
+        .eq('log_id', log_id);
+        if (error) console.error('❌ WARNING 테이블 삭제 에러:', error.message);
+        else {
+            console.log('✅ WARNING 테이블에 로그를 삭제했습니다!');
+            return {"success": true, "message": "허용 성공"};
+       }
+    }
+}
+
+async function updateLogToCheck(log_id) {
+    const { data, error } = await supabase
+    .from('log')
+    .update({"verdict": "ALLOW" , "check_status": "True"})
+    .eq('log_id', log_id);
+    if (error) console.error('❌ Log 테이블 업데이트 에러:', error.message);
+    else{ 
+        console.log('✅ Log 테이블에 로그를 업데이트했습니다!');
+        return {"success": true, "message": "체크 성공"};
     }
 }
 
@@ -246,16 +344,47 @@ app.post('/blocked', async (req, res) => {
             //console.log("차단 성공!", result_JSON);
             //console.log(logId);
         } else {
-            console.log("차단 실패!", result_JSON);
+            //console.log("차단 실패!", result_JSON);
+            res.status(500).json({ status: 'error', message: '차단 실패' });
         }
     } catch (error) {
-        console.log('❌ BLOCK 테스트 에러:', error);
+        console.log('❌ BLOCK 에러:', error);
+        res.status(500).json({ status: 'error', message: '차단 실패' });
+    }
+});
+
+app.post('/allow_blocked', async (req, res) => {
+    const ip = req.query.ip;
+    const reason = req.query.reason;
+    const logId = req.query.log_id;
+    try {
+        const result = await fetch(`http://127.0.0.1:8000/blocked?ip=${ip}&reason=${reason}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+        const result_JSON = await result.json();
+        if (result_JSON.status == "success") {
+            //console.log("차단 성공!", result_JSON);
+            const id = result_JSON.message;
+            updateLogToAllowBlockCloudflare(id,logId);
+            res.status(200).json({ status: 'success', message: '차단 성공' });
+            //console.log("차단 성공!", result_JSON);
+            //console.log(logId);
+        } else {
+            //console.log("차단 실패!", result_JSON);
+            res.status(500).json({ status: 'error', message: '차단 실패' });
+        }
+    } catch (error) {
+        console.log('❌ BLOCK 에러:', error);
         res.status(500).json({ status: 'error', message: '차단 실패' });
     }
 });
 
 app.delete('/unblocked', async (req, res) => {
     const id = req.query.id;
+    const logId = req.query.log_id;
     try {
         const result = await fetch(`http://127.0.0.1:8000/unblocked?id=${id}`, {
             method: "DELETE",
@@ -265,10 +394,12 @@ app.delete('/unblocked', async (req, res) => {
         });
         const result_JSON = await result.json();
         if (result_JSON.status == "success") {
-            console.log("차단 해제 성공!", result_JSON);
+            //console.log("차단 해제 성공!", result_JSON);
+            updateLogToUnblockCloudflare(logId);
             res.status(200).json({ status: 'success', message: '차단 해제 성공' });
         } else {
-            console.log("차단 해제 실패!", result_JSON);
+            //console.log("차단 해제 실패!", result_JSON);
+            res.status(500).json({ status: 'error', message: '차단 해제 실패' });
         }
     } catch (error) {
         console.log('❌ UNBLOCK 에러:', error);
@@ -276,6 +407,39 @@ app.delete('/unblocked', async (req, res) => {
     }
 });
 
+app.put('/permit', async (req, res) => {
+    const id = req.query.id;
+    try {
+        const result = await updateLogToPermit(id);
+        if (result.message == "허용 성공") {
+            //console.log("허용 성공!", result);
+            res.status(200).json({ status: 'success', message: '허용 성공' });
+        } else {
+            //console.log("허용 실패!", result);
+            res.status(500).json({ status: 'error', message: '허용 실패' });
+        }
+    } catch (error) {
+        console.log('❌ 허용 에러:', error);
+        res.status(500).json({ status: 'error', message: '허용 실패' });
+    }
+});
+
+app.put('/check', async (req, res) => {
+    const log_id = req.query.id;
+    try {
+        const result = await updateLogToCheck(log_id);
+                if (result.message == "체크 성공") {
+                    //console.log("체크 성공!", result);
+                    res.status(200).json({ status: 'success', message: '체크 성공' });
+                } else {
+                    //console.log("체크 실패!", result);
+                    res.status(500).json({ status: 'error', message: '체크 실패' });
+                }
+    } catch (error) {
+        console.log('❌ 체크 에러:', error);
+        res.status(500).json({ status: 'error', message: '체크 실패' });
+    }
+});
 // 아파치 로그 파일 경로 (XAMPP 기본 경로 확인)
 const services = [ { name: 'stellog', path: 'C:/xampp/apache/logs/access.log' },
                   { name: 'stelview', path: 'C:/xampp/apache/logs/stelview-access.log' },

@@ -249,8 +249,13 @@ def call_second_ai_OpenRouter(query_path: str):
 
         ai_text = res_json['choices'][0]['message']['content'].strip()
 
-        result = json.loads(ai_text)
-        return result.get("verdict", "NORMAL"), result.get("reason", "분석 완료")
+        try:
+            result = json.loads(ai_text)
+            return result.get("verdict", "NORMAL"), result.get("reason", "분석 완료")
+
+        except (json.JSONDecodeError, TypeError):
+            print("⚠️ AI 응답 JSON 파싱 실패! 폴백(Fallback) 작동함.")
+            return "NORMAL", "AI 응답 JSON 형식이 올바르지 않아 기본값 처리"
     except Exception as e:
         print(f"❌ OpenRouter API 호출 실패: {e}")
         return {"success": False,"reason": "OpenRouter API 호출 실패"}
